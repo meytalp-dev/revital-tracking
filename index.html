@@ -1,0 +1,513 @@
+<!doctype html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>מעקב מילוי — רויטל | מרכז פדגוגי</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📋</text></svg>">
+<style>
+  :root {
+    color-scheme: light dark;
+    --ground: #f4f6f4;
+    --surface: #fdfdfc;
+    --surface-2: #eef1ee;
+    --ink: #16201c;
+    --ink-2: #52514e;
+    --muted: #898781;
+    --line: #e1e0d9;
+    --ring: rgba(11,11,11,0.10);
+    --accent: #0e6b63;
+    --accent-soft: #e0efec;
+    --good: #0ca30c;
+    --good-text: #006300;
+    --good-soft: #e4f3e4;
+    --warn: #b97900;
+    --warn-soft: #fdf2dc;
+    --miss: #898781;
+    --miss-soft: #efeeea;
+    --bagrut: #2a78d6;
+    --gemer: #eb6834;
+    --track: #e5e8e4;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #0f1110;
+      --surface: #1a1c1b;
+      --surface-2: #232624;
+      --ink: #f0f1ee;
+      --ink-2: #c3c2b7;
+      --muted: #898781;
+      --line: #2c2e2c;
+      --ring: rgba(255,255,255,0.10);
+      --accent: #45b3a5;
+      --accent-soft: #12312d;
+      --good: #0ca30c;
+      --good-text: #4fc44f;
+      --good-soft: #12290f;
+      --warn: #e0a11c;
+      --warn-soft: #33270c;
+      --miss: #898781;
+      --miss-soft: #242522;
+      --bagrut: #3987e5;
+      --gemer: #d95926;
+      --track: #2a2d2b;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    line-height: 1.55;
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 32px 20px 72px; }
+
+  header.page { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; margin-bottom: 8px; }
+  .eyebrow { font-size: 13px; font-weight: 600; letter-spacing: .04em; color: var(--accent); }
+  h1 { font-size: 28px; margin: 0; font-weight: 700; text-wrap: balance; }
+  .headmeta { margin-inline-start: auto; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+  .lede { color: var(--ink-2); margin: 4px 0 18px; max-width: 62ch; }
+
+  .live { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600; border-radius: 999px; padding: 4px 12px; border: 1px solid var(--ring); background: var(--surface); color: var(--ink-2); }
+  .live .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--miss); flex: none; }
+  .live.on .dot { background: var(--good); }
+  .live.err .dot { background: var(--warn); }
+  .banner { display: none; background: var(--warn-soft); color: var(--warn); border: 1px solid var(--ring); border-radius: 10px; padding: 10px 16px; font-size: 13.5px; margin: 0 0 20px; }
+  .banner.show { display: block; }
+
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-bottom: 36px; }
+  .tile { background: var(--surface); border: 1px solid var(--ring); border-radius: 10px; padding: 18px 20px 16px; }
+  .tile .label { font-size: 13px; font-weight: 600; color: var(--ink-2); margin-bottom: 6px; }
+  .tile .big { font-size: 34px; font-weight: 700; line-height: 1.1; }
+  .tile .big small { font-size: 16px; font-weight: 500; color: var(--muted); }
+  .tile .sub { font-size: 13px; color: var(--ink-2); margin-top: 2px; }
+  .bar { height: 8px; border-radius: 4px; background: var(--track); margin-top: 12px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; border-radius: 4px; background: var(--accent); }
+
+  section { margin-bottom: 44px; }
+  h2 { font-size: 19px; margin: 0 0 4px; }
+  .secnote { color: var(--ink-2); font-size: 14px; margin: 0 0 16px; max-width: 70ch; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; background: var(--surface); border: 1px solid var(--ring); border-radius: 10px; overflow: hidden; }
+  .tablewrap { overflow-x: auto; border-radius: 10px; }
+  th { text-align: right; font-size: 12.5px; font-weight: 600; color: var(--ink-2); padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--surface-2); white-space: nowrap; }
+  td { padding: 9px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  td.num, th.num { font-variant-numeric: tabular-nums; text-align: center; }
+  .schoolname { font-weight: 600; }
+  .dim { color: var(--muted); font-size: 12.5px; }
+
+  .pill { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 600; border-radius: 999px; padding: 2px 10px; white-space: nowrap; }
+  .pill.ok { background: var(--good-soft); color: var(--good-text); }
+  .pill.warn { background: var(--warn-soft); color: var(--warn); }
+  .pill.miss { background: var(--miss-soft); color: var(--miss); font-weight: 500; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { background: var(--surface); border: 1px solid var(--ring); border-radius: 8px; padding: 8px 12px; font-size: 13.5px; }
+  .chip .n { color: var(--accent); font-weight: 700; }
+
+  .legend { display: flex; gap: 18px; align-items: center; font-size: 12.5px; color: var(--ink-2); margin: 10px 2px 6px; }
+  .legend .sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-inline-end: 5px; vertical-align: -1px; }
+  .stack { display: flex; gap: 2px; height: 14px; border-radius: 4px; overflow: hidden; min-width: 60px; }
+  .stack i { display: block; height: 100%; }
+  .stack i.b { background: var(--bagrut); border-radius: 0 4px 4px 0; }
+  .stack i.g { background: var(--gemer); border-radius: 4px 0 0 4px; }
+  .stack i:only-child { border-radius: 4px; }
+
+  .needcard { background: var(--surface); border: 1px solid var(--ring); border-radius: 10px; padding: 14px 16px; }
+  .needgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; margin-top: 14px; }
+  .needcard h3 { margin: 0 0 2px; font-size: 15px; }
+  .needcard .who { font-size: 12.5px; color: var(--muted); margin-bottom: 8px; }
+  .needcard p { margin: 0; font-size: 13.5px; color: var(--ink-2); white-space: pre-line; }
+
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; align-items: center; }
+  .fbtn { border: 1px solid var(--ring); background: var(--surface); color: var(--ink-2); font: inherit; font-size: 13px; font-weight: 600; border-radius: 999px; padding: 5px 14px; cursor: pointer; }
+  .fbtn[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .fbtn:focus-visible, .search:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .search { border: 1px solid var(--ring); background: var(--surface); color: var(--ink); font: inherit; font-size: 13.5px; border-radius: 8px; padding: 6px 12px; min-width: 200px; }
+  .count-note { font-size: 12.5px; color: var(--muted); margin-inline-start: auto; }
+
+  .foot { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--line); padding-top: 14px; margin-top: 40px; }
+  .foot a { color: var(--accent); }
+  @media (prefers-reduced-motion: no-preference) { .bar > i { transition: width .6s ease; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="page">
+    <div>
+      <div class="eyebrow">מרכז פדגוגי · משרד העבודה</div>
+      <h1>מעקב מילוי טפסים — רויטל</h1>
+    </div>
+    <div class="headmeta">
+      <span class="live" id="liveBadge"><span class="dot"></span><span id="liveText">טוען נתונים…</span></span>
+    </div>
+  </header>
+  <p class="lede">שני טפסים במעקב: <b>סקר הצרכים הטכנולוגיים</b> (ממלאים בתי הספר) ו<b>מיפוי המורים להדרכות</b> (ממלאים המנהלים). הנתונים נמשכים ישירות מגיליונות Google ומתרעננים אוטומטית.</p>
+
+  <div class="banner" id="banner"></div>
+
+  <div class="tiles" id="tiles"></div>
+
+  <section>
+    <h2>סקר צרכים טכנולוגיים — מי מילא ומה ביקשו</h2>
+    <p class="secnote" id="surveyNote"></p>
+    <div class="chips" id="themeChips" style="margin-bottom:16px"></div>
+    <div class="needgrid" id="needGrid"></div>
+  </section>
+
+  <section>
+    <h2>קהילות המקצוע — מורים שמופו לפי מקצוע</h2>
+    <p class="secnote" id="subjectsNote"></p>
+    <div class="legend" aria-hidden="true">
+      <span><span class="sw" style="background:var(--bagrut)"></span>בגרות</span>
+      <span><span class="sw" style="background:var(--gemer)"></span>גמר</span>
+    </div>
+    <div class="tablewrap"><table>
+      <thead><tr>
+        <th>מקצוע</th><th class="num">סה"כ מורים</th><th class="num">בגרות</th><th class="num">גמר</th><th style="width:130px"></th><th>מולאו גמר וגם בגרות?</th>
+      </tr></thead>
+      <tbody id="subjectsBody"></tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>מיפוי מורים להדרכות — פירוט לפי בית ספר</h2>
+    <div class="tablewrap"><table>
+      <thead id="perSchoolHead"></thead>
+      <tbody id="perSchoolBody"></tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2 id="allTitle">סטטוס כל בתי הספר</h2>
+    <p class="secnote" id="allNote"></p>
+    <div class="filters">
+      <button class="fbtn" data-f="all" aria-pressed="true" id="fAll">הכל</button>
+      <button class="fbtn" data-f="any" aria-pressed="false" id="fAny">מילאו משהו</button>
+      <button class="fbtn" data-f="none" aria-pressed="false" id="fNone">לא מילאו כלום</button>
+      <input class="search" id="q" type="search" placeholder="חיפוש בית ספר או רשת…" aria-label="חיפוש בית ספר">
+      <span class="count-note" id="countNote"></span>
+    </div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>בית ספר</th><th>רשת</th><th>סקר צרכים</th><th>מיפוי מורים</th></tr></thead>
+      <tbody id="schoolsBody"></tbody>
+    </table></div>
+  </section>
+
+  <div class="foot">
+    מקורות: גיליון <a href="https://docs.google.com/spreadsheets/d/1pIr8QoSZw4ZYoYWZWNVjhkVXLfta7S-R1YT8CW2LRWE/edit" target="_blank" rel="noopener">סקר צרכים טכנולוגיים — תשובות</a> · גיליון <a href="https://docs.google.com/spreadsheets/d/1fUQCaToShnJR7fxs3hI86bUh6VycufTc--20hFbSW18/edit" target="_blank" rel="noopener">פיקוח הדרכות משרד העבודה</a> (הקישורים נפתחים רק למי שיש גישה בגוגל).
+    שיוך שמות חופשיים מהסקר לרשימה הרשמית נעשה אוטומטית לפי שם בית הספר או שם המנהל/ת; תשובה שלא זוהתה מסומנת לבדיקה.
+  </div>
+</div>
+
+<script>
+"use strict";
+// כתובת ה-Web App של ה-Apps Script (מחזירה JSON עם נתוני שני הגיליונות)
+const DATA_URL = "https://script.google.com/macros/s/AKfycbySOgh6OJG1uLR7BSF24u08aZTXiKFzn2p-6zXvy49yOElQYgaZ77TrGU1nv7GkLfda/exec";
+const REFRESH_MS = 5 * 60 * 1000;
+
+const SUBJECT_ORDER = ["מתמטיקה","אנגלית","עברית","ספרות","היסטוריה",'תנ"ך',"אזרחות"];
+// שיוך ידני לשמות חופשיים שהזיהוי האוטומטי לא תופס
+const ALIASES = { "עמל טכנולוגי רהט":"עמל רהט בנים", "תיכון יוצר עמל טכנולוגי":"עמל אשדוד" };
+
+// ---- snapshot: נתוני 9.8.2026, מוצגים עד שהחיבור החי נטען ----
+const SNAPSHOT = {
+  asOf: "9.8.2026",
+  schools: [
+    ["אום אל פחם בנות",""],["אום אל פחם בנים","סכנין"],["אור העתיד תורני גן יבנה","עתיד"],
+    ["אורט אורמת","אורט"],["אורט בית הערבה","אורט"],["אורט כרמל","אורט"],["אורט תל נוף","אורט"],
+    ["אורט תעשיה אווירית","אורט"],["אכסאל",""],["בית אל","בית אל"],["בית חנינה בנות",""],
+    ["בית חנינה בנים",""],["בת עמי","עתיד"],["דן גורמה תל-אביב","אורט"],["דרור הגליל","דרור"],
+    ["דרור נווה מדבר","דרור"],["הדר","שלומית חרדי"],["התיכון החברתי חיפה","דרור"],
+    ["התיכון החברתי תל אביב יפו","דרור"],["זוקו","עתיד"],["חבד אור מנחם אשקלון","עתיד"],
+    ["חושן","דרור"],["חנוך לנער צפת",""],["טורען",""],["טל חרמון",""],["ירכא אבו סנאן",""],
+    ["כסרא סמיע",""],["כפר זיתים","עצמאי חרדי"],["כפר יאסיף",""],["לקייה","סכנין"],
+    ["מעיינות צפת",""],["נחלים","עצמאי חרדי"],["עמל אנרגיטק","עמל"],["עמל אשדוד","עמל"],
+    ["עמל טייבה","עמל"],["עמל טק אין","עמל"],["עמל נצרת","עמל"],["עמל רהט בנות","עמל"],
+    ["עמל רהט בנים","עמל"],["עמל רמת דוד","עמל"],["ערערה",""],["עתיד באר שבע","עתיד"],
+    ["עתיד ביר אל מכסור","עתיד"],["עתיד בית דוד","עתיד"],["עתיד גוליס בנות - ירכא","עתיד"],
+    ["עתיד ירכא בנים","עתיד"],["עתיד כפר חבד אוהלי תמימים","עתיד"],["עתיד כרמיאל","עתיד"],
+    ["עתיד מסעדה","עתיד"],["עתיד צור ים","עתיד"],["עתיד קמג","עתיד"],["עתיד תפן","עתיד"],
+    ["פלמחים","עתיד"],["צור ברק","אורט"],["רימונים טבריה","קנדה ישראל"],["שגב שלום",""],
+    ["תיכון בקהילה מהאראת שפרעם","סכנין"],["תיכון החממה",""],["תיכון שיח","עמל"],["תל שבע",""]
+  ].map(([name, net]) => ({ name, net })),
+  survey: [
+    { date:"6.8", school:"עתיד מגשימים כרמיאל", principal:"שראל פרץ", coord:"אולגה פרצובסקי", needs:"ציוד וחומרה: מחשבים ניידים, אוזניות, רמקולים, חיבור אינטרנט יציב" },
+    { date:"6.8", school:'תיכון עתיד יוצר קמ"ג', principal:"יורם בן שטרית", coord:"טל כהן", needs:"ציוד מחשוב - מחשבים ניידים לתלמידים. ללמוד איך אפשר ללמד בינה מלאכותית בלי ווייפי ובלי טלפונים" },
+    { date:"6.8", school:"עמל טכנולוגי רהט", principal:"ראאד אלהוזייל", coord:"יוסף אבו עאנם", needs:"ציוד מסוג טאבלט לתלמידים וגם הדרכה לשימוש בהם" },
+    { date:"7.8", school:"עתיד צור ים", principal:"מוקי זמברג", coord:"גבי בר", needs:"1. שימוש בבינה מלאכותית בתהליכי למידה. 2. כלים דיגיטליים להוראה. 3. ליווי פדגוגי טכנולוגי למורים חסרי ידע ובטחון. 4. תיקון מהיר של תקלות. 5. תקציב ייעודי לתוכנה וחומרה" },
+    { date:"7.8", school:"תיכון יוצר עמל טכנולוגי", principal:"מגי רביבו", coord:"אדיר מנור", needs:"עוד כלים דיגיטליים" }
+  ],
+  teachers: [
+    ...rep("אורט בית הערבה", { "מתמטיקה":[2,0], "אנגלית":[4,0], "עברית":[2,0], "ספרות":[1,0], "היסטוריה":[2,0], 'תנ"ך':[3,0], "אזרחות":[1,0] }),
+    ...rep("אורט אורמת",     { "מתמטיקה":[2,1], "אנגלית":[2,0], "עברית":[1,2], "ספרות":[1,0], "היסטוריה":[1,0], 'תנ"ך':[1,0], "אזרחות":[1,0] }),
+    ...rep("עתיד צור ים",    { "מתמטיקה":[2,0], "אנגלית":[2,1], "עברית":[1,2], "ספרות":[1,0], "היסטוריה":[1,0], 'תנ"ך':[0,1], "אזרחות":[1,1] }),
+    ...rep("אום אל פחם בנים", { "מתמטיקה":[2,0], "אנגלית":[2,0], "עברית":[2,0], "ספרות":[1,0], "היסטוריה":[1,0], "אזרחות":[1,0] })
+  ]
+};
+function rep(school, counts) {
+  const out = [];
+  for (const [subject, [b, g]] of Object.entries(counts)) {
+    for (let i = 0; i < b; i++) out.push({ school, subject, type: "bagrut" });
+    for (let i = 0; i < g; i++) out.push({ school, subject, type: "gemer" });
+  }
+  return out;
+}
+
+// ---- שיוך שמות ----
+function normName(s) {
+  return (s || "").replace(/["'״׳]/g, "").replace(/[.,()\-]/g, " ").replace(/\s+/g, " ").trim();
+}
+function tokens(s) { return normName(s).split(" ").filter(w => w && w !== "תיכון" && w !== "בית" && w !== "ספר"); }
+// שיוך שם חופשי מהסקר לבית ספר רשמי: כינוי ידני ← הכלה של כל מילות השם הרשמי ← שם מנהל/ת זהה
+function matchSchool(surveyRow, schools) {
+  const raw = surveyRow.school.trim();
+  if (ALIASES[raw]) return ALIASES[raw];
+  const sTok = new Set(tokens(raw));
+  let best = null;
+  for (const sc of schools) {
+    const oTok = tokens(sc.name);
+    // שם רשמי בן מילה אחת דורש התאמה מלאה, אחרת די בהכלה של כל המילים
+    const hit = oTok.length >= 2 ? oTok.every(w => sTok.has(w))
+              : oTok.length === 1 && sTok.size === 1 && sTok.has(oTok[0]);
+    if (hit && (!best || oTok.length > tokens(best).length)) best = sc.name;
+  }
+  if (best) return best;
+  const p = normName(surveyRow.principal);
+  if (p) {
+    const byP = schools.find(sc => sc.principal && normName(sc.principal) === p);
+    if (byP) return byP.name;
+  }
+  return null;
+}
+
+// ---- state ----
+const state = {
+  schools: SNAPSHOT.schools.map(s => ({ ...s })),
+  survey: SNAPSHOT.survey,
+  teachers: SNAPSHOT.teachers,
+  live: false,
+  updatedAt: null,
+  asOfNote: "תצוגת נתונים שמורה מ־" + SNAPSHOT.asOf
+};
+
+// ---- rendering ----
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
+let filter = "all", q = "";
+
+function computed() {
+  const schools = state.schools;
+  const surveyMatched = state.survey.map(row => ({ row, official: matchSchool(row, schools) }));
+  const filledSurvey = new Set(surveyMatched.map(m => m.official).filter(Boolean));
+  const filledMapping = new Set(state.teachers.map(t => t.school));
+  const bySubject = {};
+  for (const t of state.teachers) {
+    (bySubject[t.subject] ||= { bagrut: 0, gemer: 0 })[t.type]++;
+  }
+  const bySchool = {};
+  for (const t of state.teachers) {
+    const s = (bySchool[t.school] ||= {});
+    const c = (s[t.subject] ||= [0, 0]);
+    c[t.type === "gemer" ? 1 : 0]++;
+  }
+  return { schools, surveyMatched, filledSurvey, filledMapping, bySubject, bySchool };
+}
+
+const THEMES = [
+  { label: "💻 ציוד וחומרה (ניידים, טאבלטים)", re: /מחשב|נייד|לפטופ|טאבלט|אוזני|רמקול|ציוד|מקרן|חומרה/ },
+  { label: "🤖 בינה מלאכותית בהוראה", re: /בינה|\bai\b/i },
+  { label: "🧰 כלים דיגיטליים להוראה", re: /דיגיטל/ },
+  { label: "🎓 הדרכה וליווי פדגוגי־טכנולוגי", re: /הדרכה|ליווי|השתלמ|פדגוגי/ },
+  { label: "📶 תשתיות אינטרנט", re: /אינטרנט|wifi|ווייפי|וויפי|רשת|תשתית|חיבור/i },
+  { label: "🔧 תקציב, תקלות ותחזוקה", re: /תקציב|תקל|תחזוק|תיקון/ }
+];
+
+function schoolWord(n) { return n === 1 ? "בית ספר אחד" : n + " בתי ספר"; }
+
+function renderAll() {
+  const C = computed();
+  const total = C.schools.length || 1;
+  const nS = C.filledSurvey.size, nM = C.filledMapping.size;
+  const both = [...C.filledSurvey].filter(x => C.filledMapping.has(x));
+  const unmatched = C.surveyMatched.filter(m => !m.official);
+
+  document.getElementById("tiles").innerHTML = `
+    <div class="tile">
+      <div class="label">סקר צרכים טכנולוגיים</div>
+      <div class="big">${nS} <small>מתוך ${total} בתי ספר</small></div>
+      <div class="sub">${total - nS} בתי ספר טרם מילאו${unmatched.length ? ` · ${unmatched.length} תשובות ללא זיהוי` : ""}</div>
+      <div class="bar"><i style="width:${(nS / total * 100).toFixed(1)}%"></i></div>
+    </div>
+    <div class="tile">
+      <div class="label">מיפוי מורים להדרכות (מנהלים)</div>
+      <div class="big">${nM} <small>מתוך ${total} בתי ספר</small></div>
+      <div class="sub">${state.teachers.length} מורים מופו · ${total - nM} בתי ספר טרם מילאו</div>
+      <div class="bar"><i style="width:${(nM / total * 100).toFixed(1)}%"></i></div>
+    </div>
+    <div class="tile">
+      <div class="label">מילאו את שניהם</div>
+      <div class="big">${both.length} <small>${both.length === 1 ? "בית ספר" : "בתי ספר"}</small></div>
+      <div class="sub">${both.length ? esc(both.join(", ")) : "אף בית ספר עדיין לא השלים את שני הטפסים"}</div>
+      <div class="bar"><i style="width:${(both.length / total * 100).toFixed(1)}%"></i></div>
+    </div>`;
+
+  // --- survey section ---
+  const themeCounts = THEMES.map(th => ({
+    ...th,
+    n: new Set(C.surveyMatched.filter(m => th.re.test(m.row.needs)).map(m => m.official || m.row.school)).size
+  })).filter(th => th.n > 0);
+  document.getElementById("surveyNote").textContent =
+    state.survey.length
+      ? `התקבלו ${state.survey.length} תשובות. הצרכים המרכזיים שחוזרים מסוכמים למטה.`
+      : "טרם התקבלו תשובות בסקר.";
+  document.getElementById("themeChips").innerHTML = themeCounts.map(th =>
+    `<div class="chip">${th.label} — <span class="n">${schoolWord(th.n)}</span></div>`).join("");
+  document.getElementById("needGrid").innerHTML = C.surveyMatched.map(({ row, official }) => {
+    const title = official
+      ? `${esc(official)}${normName(official) !== normName(row.school) ? ` <span class="dim">(נרשם כ"${esc(row.school)}")</span>` : ""}`
+      : `${esc(row.school)} <span class="pill warn">⚠ שם לא זוהה — לבדיקה</span>`;
+    return `<div class="needcard">
+      <h3>${title}</h3>
+      <div class="who">${esc(row.principal)}${row.coord ? " · רכז/ת: " + esc(row.coord) : ""}${row.date ? " · " + esc(row.date) : ""}</div>
+      <p>${esc(row.needs)}</p>
+    </div>`;
+  }).join("") || '<div class="needcard"><p>אין עדיין תשובות להצגה.</p></div>';
+
+  // --- subjects table ---
+  const subjNames = [...SUBJECT_ORDER.filter(s => C.bySubject[s]), ...Object.keys(C.bySubject).filter(s => !SUBJECT_ORDER.includes(s))];
+  const rows = subjNames.map(name => ({ name, ...C.bySubject[name] }))
+    .sort((a, b) => (b.bagrut + b.gemer) - (a.bagrut + a.gemer));
+  const MAXT = Math.max(1, ...rows.map(s => s.bagrut + s.gemer));
+  const missingGemer = rows.filter(s => !s.gemer).map(s => s.name);
+  document.getElementById("subjectsNote").innerHTML = rows.length
+    ? `מתוך <b>${state.teachers.length}</b> המורים שמופו על ידי ${schoolWord(nM)}. ` +
+      (missingGemer.length ? `מורי <b>גמר</b> חסרים ב: ${esc(missingGemer.join(", "))}.` : "בכל המקצועות מולאו גם מורי בגרות וגם מורי גמר.")
+    : "טרם מופו מורים.";
+  document.getElementById("subjectsBody").innerHTML = rows.map(s => {
+    const tot = s.bagrut + s.gemer;
+    const bw = (s.bagrut / MAXT * 100).toFixed(1), gw = (s.gemer / MAXT * 100).toFixed(1);
+    const status = s.gemer > 0 && s.bagrut > 0
+      ? '<span class="pill ok">✓ בגרות + גמר</span>'
+      : s.gemer > 0
+        ? '<span class="pill warn">⚠ חסר בגרות — גמר בלבד</span>'
+        : '<span class="pill warn">⚠ חסר גמר — בגרות בלבד</span>';
+    return `<tr>
+      <td class="schoolname">${esc(s.name)}</td>
+      <td class="num"><b>${tot}</b></td>
+      <td class="num">${s.bagrut || "—"}</td>
+      <td class="num">${s.gemer || "—"}</td>
+      <td><div class="stack" role="img" aria-label="${esc(s.name)}: ${s.bagrut} בגרות, ${s.gemer} גמר">
+        ${s.bagrut ? `<i class="b" style="width:${bw}%"></i>` : ""}${s.gemer ? `<i class="g" style="width:${gw}%"></i>` : ""}
+      </div></td>
+      <td>${status}</td>
+    </tr>`;
+  }).join("") || '<tr><td colspan="6" class="dim">אין נתונים</td></tr>';
+
+  // --- per-school table ---
+  document.getElementById("perSchoolHead").innerHTML =
+    `<tr><th>בית ספר</th><th class="num">סה"כ</th>${subjNames.map(s => `<th class="num">${esc(s)}</th>`).join("")}</tr>`;
+  document.getElementById("perSchoolBody").innerHTML = Object.entries(C.bySchool)
+    .map(([school, subs]) => ({ school, subs, total: Object.values(subs).reduce((a, [b, g]) => a + b + g, 0) }))
+    .sort((a, b) => b.total - a.total)
+    .map(({ school, subs, total }) => {
+      const cells = subjNames.map(k => {
+        const [b, g] = subs[k] || [0, 0];
+        if (!b && !g) return '<td class="num dim">—</td>';
+        return `<td class="num">${b + g}${g ? ` <span class="dim">(${g} גמר)</span>` : ""}</td>`;
+      }).join("");
+      return `<tr><td class="schoolname">${esc(school)}</td><td class="num"><b>${total}</b></td>${cells}</tr>`;
+    }).join("") || `<tr><td colspan="${subjNames.length + 2}" class="dim">אין נתונים</td></tr>`;
+
+  // --- all schools table ---
+  const allRows = C.schools.map(s => {
+    const survey = C.filledSurvey.has(s.name), map = C.filledMapping.has(s.name);
+    return { ...s, survey, map, any: survey || map };
+  }).sort((a, b) => (b.survey + b.map) - (a.survey + a.map) || a.name.localeCompare(b.name, "he"));
+  const nAny = allRows.filter(r => r.any).length;
+  document.getElementById("allTitle").textContent = `סטטוס כל ${C.schools.length} בתי הספר`;
+  document.getElementById("allNote").textContent =
+    `${schoolWord(nAny)} מילאו לפחות טופס אחד; ${C.schools.length - nAny} טרם מילאו אף טופס.`;
+  document.getElementById("fAll").textContent = `הכל (${C.schools.length})`;
+  document.getElementById("fAny").textContent = `מילאו משהו (${nAny})`;
+  document.getElementById("fNone").textContent = `לא מילאו כלום (${C.schools.length - nAny})`;
+  const shown = allRows.filter(r =>
+    (filter === "all" || (filter === "any" ? r.any : !r.any)) &&
+    (!q || r.name.includes(q) || r.net.includes(q))
+  );
+  document.getElementById("schoolsBody").innerHTML = shown.map(r => `<tr>
+    <td class="schoolname">${esc(r.name)}</td>
+    <td class="dim">${esc(r.net) || "—"}</td>
+    <td>${r.survey ? '<span class="pill ok">✓ מילאו</span>' : '<span class="pill miss">טרם</span>'}</td>
+    <td>${r.map ? '<span class="pill ok">✓ מילאו</span>' : '<span class="pill miss">טרם</span>'}</td>
+  </tr>`).join("") || '<tr><td colspan="4" class="dim">לא נמצאו בתי ספר</td></tr>';
+  document.getElementById("countNote").textContent = "מוצגים " + shown.length + " בתי ספר";
+
+  // --- live badge ---
+  const badge = document.getElementById("liveBadge"), liveText = document.getElementById("liveText");
+  badge.classList.remove("on", "err");
+  if (state.live) {
+    badge.classList.add("on");
+    const t = state.updatedAt ? new Date(state.updatedAt) : null;
+    liveText.textContent = "נתונים חיים מהגיליונות" +
+      (t ? " · עודכן " + t.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" }) : "");
+  } else {
+    badge.classList.add("err");
+    liveText.textContent = state.asOfNote;
+  }
+}
+
+function showBanner(html) {
+  const b = document.getElementById("banner");
+  if (html) { b.innerHTML = html; b.classList.add("show"); }
+  else { b.innerHTML = ""; b.classList.remove("show"); }
+}
+
+document.querySelectorAll(".fbtn").forEach(b => b.addEventListener("click", () => {
+  filter = b.dataset.f;
+  document.querySelectorAll(".fbtn").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  renderAll();
+}));
+document.getElementById("q").addEventListener("input", e => { q = e.target.value.trim(); renderAll(); });
+
+renderAll();
+
+// ---- live data ----
+async function refresh() {
+  try {
+    const res = await fetch(DATA_URL, { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    if (!data || !Array.isArray(data.schools) || !data.schools.length || !Array.isArray(data.survey)) {
+      throw new Error("bad payload");
+    }
+    state.schools = data.schools.map(s => ({ name: String(s.name || ""), net: String(s.net || ""), principal: String(s.principal || "") }));
+    state.survey = data.survey.map(r => ({
+      date: String(r.date || ""), school: String(r.school || ""),
+      principal: String(r.principal || ""), coord: String(r.coord || ""), needs: String(r.needs || "")
+    }));
+    state.teachers = (data.teachers || []).map(t => {
+      let subject = String(t.subject || "").trim();
+      if (subject.startsWith("תנ")) subject = 'תנ"ך';
+      return { school: String(t.school || ""), subject, type: t.type === "gemer" ? "gemer" : "bagrut" };
+    });
+    state.live = true;
+    state.updatedAt = Date.now();
+    showBanner("");
+  } catch (err) {
+    if (!state.live) {
+      showBanner("החיבור החי לגיליונות אינו זמין כרגע, לכן מוצגת תמונת מצב שמורה מ־" + SNAPSHOT.asOf +
+        ". אם זה נמשך — יש לוודא שה־Apps Script פרוס בגרסה העדכנית (עם doGet).");
+    }
+    // אם כבר יש נתונים חיים — שומרים אותם ומנסים שוב בסבב הבא
+  }
+  renderAll();
+}
+refresh();
+setInterval(refresh, REFRESH_MS);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
+</script>
+</body>
+</html>
