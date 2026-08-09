@@ -485,7 +485,9 @@ async function refresh() {
     }
     state.schools = data.schools.map(s => ({ name: String(s.name || ""), net: String(s.net || ""), principal: String(s.principal || "") }));
     state.survey = data.survey.map(r => ({
-      date: String(r.date || ""), school: String(r.school || ""),
+      // מסתירים ערכי תאריך לא-מספריים (למשל "Thu") שמגיעים מ-Apps Script
+      date: /\d/.test(String(r.date || "")) ? String(r.date) : "",
+      school: String(r.school || ""),
       principal: String(r.principal || ""), coord: String(r.coord || ""), needs: String(r.needs || "")
     }));
     state.teachers = (data.teachers || []).map(t => {
