@@ -132,6 +132,34 @@
   .foot { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--line); padding-top: 14px; margin-top: 40px; }
   .foot a { color: var(--accent); }
   @media (prefers-reduced-motion: no-preference) { .bar > i { transition: width .6s ease; } }
+
+  /* --- מי עדיין לא מילא, לפי פריסת פיקוח --- */
+  .chase { background: var(--surface); border: 1px solid var(--ring); border-radius: 12px; padding: 18px 20px 20px; margin: 0 0 34px; }
+  .chase-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
+  .chase-head h2 { font-size: 19px; margin: 0; }
+  .chase-head .sum { font-size: 13.5px; color: var(--ink-2); }
+  .chase-note { margin: 6px 0 0; font-size: 13px; color: var(--muted); max-width: 74ch; }
+  .chase-tabs { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 14px 0 0; }
+  .cbtn { border: 1px solid var(--ring); background: var(--surface); color: var(--accent); font: inherit; font-size: 12.5px; font-weight: 600; border-radius: 8px; padding: 4px 11px; cursor: pointer; white-space: nowrap; }
+  .cbtn:hover { background: var(--accent-soft); }
+  .cbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .cbtn.done { background: var(--good-soft); color: var(--good-text); border-color: transparent; }
+  .cbtn.all { margin-inline-start: auto; }
+  .supgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin-top: 16px; }
+  .supcard { border: 1px solid var(--ring); border-radius: 10px; padding: 12px 14px 13px; background: var(--surface-2); }
+  .supcard .top { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
+  .supcard .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c, var(--muted)); flex: none; }
+  .supcard .nm { font-weight: 700; font-size: 14px; }
+  .supcard .n { font-size: 12.5px; color: var(--muted); }
+  .supcard .cbtn { margin-inline-start: auto; padding: 3px 9px; font-size: 12px; }
+  .supcard ol { margin: 0; padding-inline-start: 19px; font-size: 13.5px; }
+  .supcard li { margin-bottom: 3px; }
+  .supcard li b { font-weight: 600; }
+  .supcard li span { color: var(--muted); font-size: 12.5px; }
+  .allclear { background: var(--good-soft); color: var(--good-text); border-radius: 10px; padding: 14px 16px; font-size: 14px; font-weight: 600; margin-top: 16px; }
+  .tbtn { border: 1px solid var(--ring); background: var(--surface); color: var(--ink-2); font: inherit; font-size: 13px; font-weight: 600; border-radius: 999px; padding: 5px 14px; cursor: pointer; }
+  .tbtn[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .tbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 </style>
 </head>
 <body>
@@ -148,6 +176,21 @@
   <p class="lede">שני טפסים במעקב: <b>סקר הצרכים הטכנולוגיים</b> (ממלאים בתי הספר) ו<b>מיפוי המורים להדרכות</b> (ממלאים המנהלים). הנתונים נמשכים ישירות מגיליונות Google ומתרעננים אוטומטית.</p>
 
   <div class="banner" id="banner"></div>
+
+  <section class="chase" aria-labelledby="chaseTitle">
+    <div class="chase-head">
+      <h2 id="chaseTitle">מי עדיין לא מילא — לפי פריסת פיקוח</h2>
+      <span class="sum" id="chaseSum"></span>
+    </div>
+    <p class="chase-note">החלוקה לפי פריסת הפיקוח הפדגוגי תשפ"ז. בית ספר בשיוך משותף מופיע אצל שני המפקחים. כפתור "העתק" מעתיק את הרשימה כטקסט מוכן לשליחה.</p>
+    <div class="chase-tabs">
+      <button class="tbtn cf" type="button" data-c="survey" aria-pressed="true">סקר צרכים</button>
+      <button class="tbtn cf" type="button" data-c="map" aria-pressed="false">מיפוי מורים</button>
+      <button class="tbtn cf" type="button" data-c="both" aria-pressed="false">לא מילאו כלום</button>
+      <button class="cbtn all" type="button" id="copyAll">📋 העתקת הרשימה כולה</button>
+    </div>
+    <div class="supgrid" id="chaseGrid"></div>
+  </section>
 
   <div class="tiles" id="tiles"></div>
 
@@ -329,6 +372,7 @@ function schoolWord(n) { return n === 1 ? "בית ספר אחד" : n + " בתי 
 
 function renderAll() {
   const C = computed();
+  renderChase(C);
   const total = C.schools.length || 1;
   const nS = C.filledSurvey.size, nM = C.filledMapping.size;
   const both = [...C.filledSurvey].filter(x => C.filledMapping.has(x));
@@ -464,6 +508,150 @@ function showBanner(html) {
   if (html) { b.innerHTML = html; b.classList.add("show"); }
   else { b.innerHTML = ""; b.classList.remove("show"); }
 }
+
+// ---- פריסת הפיקוח תשפ"ז: שיוך בית ספר למפקח/ת (מקור: prisat-pikuah.html, 64 מוסדות) ----
+const SUP_COLORS = {
+  "ויסאם סואלחה": "#14548C", "יסמין אמון": "#1F7A4D", "יששכר חפץ": "#17857F",
+  "ליאת צבר": "#6E56A8", "סיגלית דאי": "#B0375E", "רביב שורץ": "#9A5B00",
+  "רויטל אמיר": "#C0392B", "שרונה בלוך": "#0E7490"
+};
+const SUP_ORDER = Object.keys(SUP_COLORS);
+const UNASSIGNED = "ללא שיוך בפריסת הפיקוח";
+// המפתחות הם שמות בתי הספר כפי שהם מגיעים מגיליון "פיקוח הדרכות" (וגם כתיבים חלופיים מהתצוגה השמורה)
+const PIKUAH = {
+  "בית חנינה בנות": ["ויסאם סואלחה"], "בית חנינה בנים": ["ויסאם סואלחה"],
+  "עמל טייבה": ["ויסאם סואלחה"], "ערערה": ["ויסאם סואלחה"],
+  "אורט כרמל": ["יסמין אמון"], "אכסאל": ["יסמין אמון"],
+  "תיכון אלאמאני סחנין": ["יסמין אמון"], "כסרא סמיע": ["יסמין אמון"],
+  "עתיד גוליס בנות - ירכא": ["יסמין אמון"], "טורען": ["יסמין אמון"],
+  "כפר יאסיף": ["יסמין אמון"], "עמל נצרת": ["יסמין אמון"],
+  "עתיד ירכא בנים": ["יסמין אמון"], "עתיד יוצר אבדאע ביר אל מכסור": ["יסמין אמון"],
+  "עתיד ביר אל מכסור": ["יסמין אמון"], "עתיד מסעדה": ["יסמין אמון"], "עתיד תפן": ["יסמין אמון"],
+  "עמל רהט": ["יסמין אמון", "סיגלית דאי"],
+  "עמל רהט בנים": ["יסמין אמון", "סיגלית דאי"], "עמל רהט בנות": ["יסמין אמון", "סיגלית דאי"],
+  "אור העתיד תורני גן יבנה": ["יששכר חפץ"], "עתיד בית דוד": ["יששכר חפץ"],
+  "הדר": ["יששכר חפץ"], "טל חרמון": ["יששכר חפץ"], "חנוך לנער צפת": ["יששכר חפץ"],
+  "כפר זיתים": ["יששכר חפץ"], "מעיינות צפת": ["יששכר חפץ"], "נחלים": ["יששכר חפץ"],
+  "בת עמי": ["יששכר חפץ"], "עתיד כפר חבד אוהלי תמימים": ["יששכר חפץ"],
+  "ח׳טוואת ירכא אבו סנאן": ["ליאת צבר"], "ירכא אבו סנאן": ["ליאת צבר"],
+  "אום אל פחם בנות": ["ליאת צבר"], "עמל אנרגיטק": ["ליאת צבר"], "בית אל": ["ליאת צבר"],
+  "דרור הגליל": ["ליאת צבר"], "התיכון החברתי חיפה": ["ליאת צבר"], "עתיד צור ים": ["ליאת צבר"],
+  "רימונים טבריה": ["ליאת צבר"], "עמל רמת דוד": ["ליאת צבר"],
+  "התיכון החברתי תל אביב יפו": ["ליאת צבר"], "זוקו": ["ליאת צבר"], "תיכון שיח": ["ליאת צבר"],
+  "אורט אורמת": ["סיגלית דאי"], "אורט תל נוף": ["סיגלית דאי"],
+  "אורט תעשיה אווירית": ["סיגלית דאי"], "דן גורמה תל-אביב": ["סיגלית דאי"],
+  "עמל אשדוד": ["סיגלית דאי"], "עמל טק אין": ["סיגלית דאי"], "עתיד באר שבע": ["סיגלית דאי"],
+  "פלמחים": ["סיגלית דאי"], "צור ברק": ["סיגלית דאי"], "עתיד קמג": ["סיגלית דאי"],
+  "תיכון החממה": ["סיגלית דאי", "רויטל אמיר"],
+  "אום אל פחם בנים": ["רביב שורץ"], "התיכון החברתי מצפה רמון": ["רביב שורץ"],
+  "עתיד כרמיאל": ["רביב שורץ"], "תיכון בקהילה מהאראת שפרעם": ["רביב שורץ"],
+  "אורט בית הערבה": ["רויטל אמיר"], "חושן": ["רויטל אמיר"],
+  "דרור נווה מדבר": ["שרונה בלוך"], "לקייה": ["שרונה בלוך"], "תל שבע": ["שרונה בלוך"],
+  "שגב שלום": ["שרונה בלוך"]
+};
+const PIKUAH_N = {};
+for (const [k, v] of Object.entries(PIKUAH)) PIKUAH_N[normName(k)] = v;
+function supsFor(schoolName) { return PIKUAH_N[normName(schoolName)] || []; }
+
+// ---- מי טרם מילא ----
+let chaseMode = "survey";
+const CHASE_LABEL = {
+  survey: "מי טרם מילא את סקר הצרכים הטכנולוגיים",
+  map: "מי טרם מילא את מיפוי המורים להדרכות",
+  both: "בתי ספר שלא מילאו אף אחד משני הטפסים"
+};
+let chaseGroupsNow = [], chaseTotalNow = 0;
+
+function chaseMissing(C, mode) {
+  return C.schools.filter(s => {
+    const sv = C.filledSurvey.has(s.name), mp = C.filledMapping.has(s.name);
+    return mode === "survey" ? !sv : mode === "map" ? !mp : (!sv && !mp);
+  });
+}
+function groupBySup(list) {
+  const g = new Map();
+  for (const s of list) {
+    const sups = supsFor(s.name);
+    for (const k of (sups.length ? sups : [UNASSIGNED])) {
+      if (!g.has(k)) g.set(k, []);
+      g.get(k).push(s);
+    }
+  }
+  const idx = n => { const i = SUP_ORDER.indexOf(n); return i < 0 ? 99 : i; };
+  return [...g.entries()].sort((a, b) => idx(a[0]) - idx(b[0]) || a[0].localeCompare(b[0], "he"));
+}
+function line(s) { return s.name + (s.principal ? " — " + s.principal : ""); }
+function textForSup(sup, list, mode) {
+  return CHASE_LABEL[mode] + " · " + sup + " (" + list.length + ")\n" +
+    list.map((s, i) => (i + 1) + ". " + line(s)).join("\n");
+}
+function textForAll(groups, mode, total) {
+  return CHASE_LABEL[mode] + "\n" + total + " בתי ספר, לפי פריסת הפיקוח\n\n" +
+    groups.map(([sup, list]) => sup + " (" + list.length + "):\n" +
+      list.map(s => "• " + line(s)).join("\n")).join("\n\n");
+}
+function copyText(text, btn) {
+  const done = () => {
+    const old = btn.dataset.label || btn.textContent;
+    btn.dataset.label = old;
+    btn.textContent = "✓ הועתק";
+    btn.classList.add("done");
+    setTimeout(() => { btn.textContent = btn.dataset.label; btn.classList.remove("done"); }, 1800);
+  };
+  const fallback = () => {
+    const ta = document.createElement("textarea");
+    ta.value = text; ta.setAttribute("readonly", "");
+    ta.style.cssText = "position:fixed;top:-1000px;opacity:0";
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); } catch (e) { /* אין מה לעשות */ }
+    ta.remove(); done();
+  };
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(done, fallback);
+  } else fallback();
+}
+
+function renderChase(C) {
+  const counts = { survey: chaseMissing(C, "survey").length, map: chaseMissing(C, "map").length, both: chaseMissing(C, "both").length };
+  document.querySelectorAll(".cf").forEach(b => {
+    const m = b.dataset.c;
+    b.textContent = (m === "survey" ? "טרם מילאו סקר צרכים" : m === "map" ? "טרם מילאו מיפוי מורים" : "לא מילאו אף טופס") + " (" + counts[m] + ")";
+    b.setAttribute("aria-pressed", String(m === chaseMode));
+  });
+
+  const missing = chaseMissing(C, chaseMode);
+  const groups = groupBySup(missing);
+  chaseGroupsNow = groups; chaseTotalNow = missing.length;
+
+  const nSups = groups.filter(([s]) => s !== UNASSIGNED).length;
+  document.getElementById("chaseSum").textContent = missing.length
+    ? missing.length + " מתוך " + C.schools.length + " בתי ספר · " + (nSups === 1 ? "מפקח/ת אחד" : nSups + " מפקחים") + " בטיפול"
+    : "הכל מולא ✓";
+  document.getElementById("copyAll").style.display = missing.length ? "" : "none";
+
+  document.getElementById("chaseGrid").innerHTML = missing.length
+    ? groups.map(([sup, list]) => `<div class="supcard" style="--c:${SUP_COLORS[sup] || "var(--muted)"}">
+        <div class="top">
+          <span class="dot"></span>
+          <span class="nm">${esc(sup)}</span>
+          <span class="n">${list.length}</span>
+          <button class="cbtn" type="button" data-sup="${esc(sup)}">העתק</button>
+        </div>
+        <ol>${list.map(s => `<li><b>${esc(s.name)}</b>${s.principal ? ` <span>${esc(s.principal)}</span>` : ""}</li>`).join("")}</ol>
+      </div>`).join("")
+    : `<div class="allclear">כל ${C.schools.length} בתי הספר מילאו — אין למי להזכיר.</div>`;
+}
+
+document.querySelectorAll(".cf").forEach(b => b.addEventListener("click", () => { chaseMode = b.dataset.c; renderAll(); }));
+document.getElementById("chaseGrid").addEventListener("click", ev => {
+  const btn = ev.target.closest(".cbtn[data-sup]");
+  if (!btn) return;
+  const sup = btn.dataset.sup;
+  const grp = chaseGroupsNow.find(([s]) => s === sup);
+  if (grp) copyText(textForSup(sup, grp[1], chaseMode), btn);
+});
+document.getElementById("copyAll").addEventListener("click", ev =>
+  copyText(textForAll(chaseGroupsNow, chaseMode, chaseTotalNow), ev.currentTarget));
 
 document.querySelectorAll(".fbtn").forEach(b => b.addEventListener("click", () => {
   filter = b.dataset.f;
