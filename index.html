@@ -254,7 +254,13 @@ const REFRESH_MS = 5 * 60 * 1000;
 
 const SUBJECT_ORDER = ["מתמטיקה","אנגלית","עברית","ספרות","היסטוריה",'תנ"ך',"אזרחות"];
 // שיוך ידני לשמות חופשיים שהזיהוי האוטומטי לא תופס
-const ALIASES = { "עמל טכנולוגי רהט":"עמל רהט בנים", "תיכון יוצר עמל טכנולוגי":"עמל אשדוד", "אורט תעשייה אווירית":"אורט תעשיה אווירית", "טכנולוגי אכסאל":"אכסאל" };
+const ALIASES = { "עמל טכנולוגי רהט":"עמל רהט בנים", "תיכון יוצר עמל טכנולוגי":"עמל אשדוד", "אורט תעשייה אווירית":"אורט תעשיה אווירית", "טכנולוגי אכסאל":"אכסאל", "מסאראת ואדי עארה":"ערערה" };
+// אותו בית ספר שנרשם בגיליון בשני שמות — ממוזג לשם אחד (אחרת הוא נספר פעמיים
+// ונראה כאילו לא מילא, כי כל טופס נקלט תחת שם אחר)
+const SCHOOL_MERGE = { "תיכון מסאראת": "ערערה" };
+const SCHOOL_MERGE_N = {};
+for (const [k, v] of Object.entries(SCHOOL_MERGE)) SCHOOL_MERGE_N[normName(k)] = v;
+function canonSchool(name) { return name ? (SCHOOL_MERGE_N[normName(name)] || name) : name; }
 
 // ---- snapshot: נתוני 9.8.2026, מוצגים עד שהחיבור החי נטען ----
 const SNAPSHOT = {
@@ -342,17 +348,25 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", "
 let filter = "all", q = "";
 
 function computed() {
-  const schools = state.schools;
-  const surveyMatched = state.survey.map(row => ({ row, official: matchSchool(row, schools) }));
+  // הזיהוי נעשה מול הרשימה הגולמית (כולל שמות כפולים), ורק התוצאה מאוחדת
+  const raw = state.schools;
+  const seen = new Set(), schools = [];
+  for (const s of raw) {
+    const name = canonSchool(s.name);
+    if (seen.has(name)) continue;
+    seen.add(name);
+    schools.push(name === s.name ? s : { ...s, name });
+  }
+  const surveyMatched = state.survey.map(row => ({ row, official: canonSchool(matchSchool(row, raw)) }));
   const filledSurvey = new Set(surveyMatched.map(m => m.official).filter(Boolean));
-  const filledMapping = new Set(state.teachers.map(t => t.school));
+  const filledMapping = new Set(state.teachers.map(t => canonSchool(t.school)));
   const bySubject = {};
   for (const t of state.teachers) {
     (bySubject[t.subject] ||= { bagrut: 0, gemer: 0 })[t.type]++;
   }
   const bySchool = {};
   for (const t of state.teachers) {
-    const s = (bySchool[t.school] ||= {});
+    const s = (bySchool[canonSchool(t.school)] ||= {});
     const c = (s[t.subject] ||= [0, 0]);
     c[t.type === "gemer" ? 1 : 0]++;
   }
@@ -520,7 +534,8 @@ const UNASSIGNED = "ללא שיוך בפריסת הפיקוח";
 // המפתחות הם שמות בתי הספר כפי שהם מגיעים מגיליון "פיקוח הדרכות" (וגם כתיבים חלופיים מהתצוגה השמורה)
 const PIKUAH = {
   "בית חנינה בנות": ["ויסאם סואלחה"], "בית חנינה בנים": ["ויסאם סואלחה"],
-  "עמל טייבה": ["ויסאם סואלחה"], "ערערה": ["ויסאם סואלחה"],
+  "ערערה": ["ויסאם סואלחה"], "תיכון מסאראת": ["ויסאם סואלחה"],
+  "עמל טייבה": ["ויסאם סואלחה"],
   "אורט כרמל": ["יסמין אמון"], "אכסאל": ["יסמין אמון"],
   "תיכון אלאמאני סחנין": ["יסמין אמון"], "כסרא סמיע": ["יסמין אמון"],
   "עתיד גוליס בנות - ירכא": ["יסמין אמון"], "טורען": ["יסמין אמון"],
