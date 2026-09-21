@@ -83,6 +83,10 @@
   .tile .big { font-size: 34px; font-weight: 700; line-height: 1.1; }
   .tile .big small { font-size: 16px; font-weight: 500; color: var(--muted); }
   .tile .sub { font-size: 13px; color: var(--ink-2); margin-top: 2px; }
+  .tile .who { font-size: 13px; color: var(--ink-2); margin-top: 12px; line-height: 1.55; }
+  .tile .who b { display: block; font-weight: 700; margin-bottom: 2px; }
+  .tile .who summary { cursor: pointer; font-weight: 700; }
+  .tile .who.done { color: #1F7A42; font-weight: 600; }
   .bar { height: 8px; border-radius: 4px; background: var(--track); margin-top: 12px; overflow: hidden; }
   .bar > i { display: block; height: 100%; border-radius: 4px; background: var(--accent); }
 
@@ -392,6 +396,15 @@ function renderAll() {
   const nM = C.schools.filter(s => C.filledMapping.has(s.name)).length;
   const both = [...C.filledSurvey].filter(x => C.filledMapping.has(x));
   const unmatched = C.surveyMatched.filter(m => !m.official);
+  // שמות בתי הספר שטרם מילאו, בתוך הכרטיס עצמו; רשימה ארוכה נפתחת בלחיצה
+  const whoMissing = filled => {
+    const names = C.schools.filter(s => !filled.has(s.name)).map(s => s.name).sort((a, b) => a.localeCompare(b, "he"));
+    if (!names.length) return `<div class="who done">כל בתי הספר מילאו</div>`;
+    const list = esc(names.join(" · "));
+    return names.length > 14
+      ? `<details class="who"><summary>מי טרם מילא (${names.length})</summary>${list}</details>`
+      : `<div class="who"><b>טרם מילאו (${names.length}):</b>${list}</div>`;
+  };
 
   document.getElementById("tiles").innerHTML = `
     <div class="tile">
@@ -399,18 +412,21 @@ function renderAll() {
       <div class="big">${nS} <small>מתוך ${total} בתי ספר</small></div>
       <div class="sub">${total - nS} בתי ספר טרם מילאו${unmatched.length ? ` · ${unmatched.length} תשובות ללא זיהוי` : ""}</div>
       <div class="bar"><i style="width:${(nS / total * 100).toFixed(1)}%"></i></div>
+      ${whoMissing(C.filledSurvey)}
     </div>
     <div class="tile">
       <div class="label">מיפוי מורים להדרכות (מנהלים)</div>
       <div class="big">${nM} <small>מתוך ${total} בתי ספר</small></div>
       <div class="sub">${state.teachers.length} מורים מופו · ${total - nM} בתי ספר טרם מילאו</div>
       <div class="bar"><i style="width:${(nM / total * 100).toFixed(1)}%"></i></div>
+      ${whoMissing(C.filledMapping)}
     </div>
     <div class="tile">
       <div class="label">מילאו את שניהם</div>
       <div class="big">${both.length} <small>${both.length === 1 ? "בית ספר" : "בתי ספר"}</small></div>
-      <div class="sub">${both.length ? esc(both.join(", ")) : "אף בית ספר עדיין לא השלים את שני הטפסים"}</div>
+      <div class="sub">${both.length ? "השלימו גם את הסקר וגם את מיפוי המורים" : "אף בית ספר עדיין לא השלים את שני הטפסים"}</div>
       <div class="bar"><i style="width:${(both.length / total * 100).toFixed(1)}%"></i></div>
+      ${both.length ? `<details class="who"><summary>מי מילא את שניהם (${both.length})</summary>${esc(both.slice().sort((x, y) => x.localeCompare(y, "he")).join(" · "))}</details>` : ""}
     </div>`;
 
   // --- survey section ---
